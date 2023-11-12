@@ -348,7 +348,7 @@ func makeParamsAttribute(args []any) attribute.KeyValue {
 
 // TraceAcquireStart is called at the beginning of Acquire
 // The returned context is used for the rest of the call and will be passed to TraceAcquireEnd.
-func (t *Tracer) TraceAcquireStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceAcquireStartData) context.Context {
+func (t *Tracer) TraceAcquireStart(ctx context.Context, data pgx.TraceAcquireStartData) context.Context {
 	if !trace.SpanFromContext(ctx).IsRecording() {
 		return ctx
 	}
@@ -358,17 +358,13 @@ func (t *Tracer) TraceAcquireStart(ctx context.Context, conn *pgx.Conn, data pgx
 		trace.WithAttributes(t.attrs...),
 	}
 
-	if conn != nil {
-		opts = append(opts, connectionAttributesFromConfig(conn.Config())...)
-	}
-
 	ctx, _ = t.tracer.Start(ctx, "acquire", opts...)
 
 	return ctx
 }
 
 // TraceAcquireEnd is called at the end of Acquire.
-func (t *Tracer) TraceAcquireEnd(ctx context.Context, _ *pgx.Conn, data pgx.TraceAcquireEndData) {
+func (t *Tracer) TraceAcquireEnd(ctx context.Context, data pgx.TraceAcquireEndData) {
 	span := trace.SpanFromContext(ctx)
 	recordError(span, data.Err)
 	span.End()
