@@ -1,4 +1,4 @@
-[![Go Reference](https://pkg.go.dev/badge/github.com/exaring/otelpgx.svg)](https://pkg.go.dev/github.com/exaring/otelpgx)
+[![Go Reference](https://pkg.go.dev/badge/github.com/raw0w/otelpgx.svg)](https://pkg.go.dev/github.com/raw0w/otelpgx)
 
 # otelpgx
 
@@ -15,13 +15,13 @@ instrumentation for the [jackc/pgx](https://github.com/jackc/pgx) library.
 Make sure you have a suitable pgx version:
 
 ```bash
-go get github.com/jackc/pgx/v5
+go get github.com/raw0w/pgx/v5
 ```
 
 Install the library:
 
 ```go
-go get github.com/exaring/otelpgx
+go get github.com/raw0w/otelpgx
 ```
 
 Create the tracer as part of your connection:

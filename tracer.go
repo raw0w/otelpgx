@@ -5,16 +5,16 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/raw0w/pgx/v5"
 	"strings"
 
-	"github.com/jackc/pgx/v5"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/exaring/otelpgx/internal"
+	"github.com/raw0w/otelpgx/internal"
 )
 
 const (
@@ -307,7 +307,7 @@ func (t *Tracer) TracePrepareStart(ctx context.Context, conn *pgx.Conn, data pgx
 		trace.WithSpanKind(trace.SpanKindClient),
 		trace.WithAttributes(t.attrs...),
 	}
-	
+
 	if data.Name != "" {
 		trace.WithAttributes(PrepareStmtNameKey.String(data.Name))
 	}
@@ -344,4 +344,32 @@ func makeParamsAttribute(args []any) attribute.KeyValue {
 		ss[i] = fmt.Sprintf("%+v", args[i])
 	}
 	return QueryParametersKey.StringSlice(ss)
+}
+
+// TraceAcquireStart is called at the beginning of Acquire
+// The returned context is used for the rest of the call and will be passed to TraceAcquireEnd.
+func (t *Tracer) TraceAcquireStart(ctx context.Context, conn *pgx.Conn, data pgx.TraceAcquireStartData) context.Context {
+	if !trace.SpanFromContext(ctx).IsRecording() {
+		return ctx
+	}
+
+	opts := []trace.SpanStartOption{
+		trace.WithSpanKind(trace.SpanKindClient),
+		trace.WithAttributes(t.attrs...),
+	}
+
+	if conn != nil {
+		opts = append(opts, connectionAttributesFromConfig(conn.Config())...)
+	}
+
+	ctx, _ = t.tracer.Start(ctx, "acquire", opts...)
+
+	return ctx
+}
+
+// TraceAcquireEnd is called at the end of Acquire.
+func (t *Tracer) TraceAcquireEnd(ctx context.Context, _ *pgx.Conn, data pgx.TraceAcquireEndData) {
+	span := trace.SpanFromContext(ctx)
+	recordError(span, data.Err)
+	span.End()
 }
